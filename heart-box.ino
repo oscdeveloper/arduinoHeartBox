@@ -12,6 +12,9 @@ int mirrorRightLedPin = 6;
 int mirrorLedsMaxBrightness = 255;
 int mirrorLedsMinBrightness = 0;
 int mirrorLedsFadeFrame = 1;
+int mirrorLedsFadeInDelayTime = 20;
+int mirrorLedsFadeOutDelayTime = 5;
+boolean mirrorLedsAnimationTriggered = false;
 
 
 
@@ -32,43 +35,59 @@ void loop() {
 
   if ( digitalRead(ringButtonPin) == HIGH ) { // box is open, heart stops pulsing
 
-    // stop heart animation
-    analogWrite(heartLedsTransistorPin, 0);
-
-    // pause for 1sec, to have time to fully open the box ;)
-    delay(1000);
-
-    // mirror leds fade in
-    for (int fadeValue = mirrorLedsMinBrightness; fadeValue <= mirrorLedsMaxBrightness; fadeValue += mirrorLedsFadeFrame) {
-      analogWrite(mirrorLeftLedPin, fadeValue);
-      analogWrite(mirrorRightLedPin, fadeValue);      
+    if ( mirrorLedsAnimationTriggered == false ) {
+      
+      // stop heart animation
+      analogWrite(heartLedsTransistorPin, 0);
+  
+      // pause for 1sec, to have time to fully open the box ;)
+      delay(2000);
+  
+      // mirror leds fade in
+      for (int fadeValue = mirrorLedsMinBrightness; fadeValue <= mirrorLedsMaxBrightness; fadeValue += mirrorLedsFadeFrame) {
+        analogWrite(mirrorLeftLedPin, fadeValue);
+        analogWrite(mirrorRightLedPin, fadeValue);
+        delay(mirrorLedsFadeInDelayTime);     
+      }
+  
+      // mirror leds animation triggered only once
+      mirrorLedsAnimationTriggered = true;
+      
+      // switch on ring box led
+      digitalWrite(ringLedPin, HIGH);
     }
-
-    // led in ring box is on
-    digitalWrite(ringLedPin, HIGH);
 
   // box is closed, heart starts pulsing        
   } else {
 
-    // led in ring box is off
-    digitalWrite(ringLedPin, LOW);
+    if ( mirrorLedsAnimationTriggered == true ) {
 
-    // swtich off mirror leds
-    analogWrite(mirrorLeftLedPin, mirrorLedsMinBrightness);
-    analogWrite(mirrorRightLedPin, mirrorLedsMinBrightness);
+      // led in ring box is off
+      digitalWrite(ringLedPin, LOW);
+  
+      // fade out mirror leds
+      for (int fadeValue = mirrorLedsMaxBrightness; fadeValue >= mirrorLedsMinBrightness; fadeValue -= mirrorLedsFadeFrame) {
+        analogWrite(mirrorLeftLedPin, fadeValue);
+        analogWrite(mirrorRightLedPin, fadeValue);
+        delay(mirrorLedsFadeOutDelayTime);     
+      }     
+      
+      // reset mirror leds animation flag
+      mirrorLedsAnimationTriggered = false;   
+    }
+
 
     // heart pulsing animation, fade in
     for (int fadeValue = heartMinBrightness; fadeValue <= heartMaxBrightness; fadeValue += heartFadeFrame) {
       analogWrite(heartLedsTransistorPin, fadeValue);
       delay(heartDelayTime);
     }
-
+      
     // heart pulsing animation, fade out
     for (int fadeValue = heartMaxBrightness; fadeValue >= heartMinBrightness; fadeValue -= heartFadeFrame) {
       analogWrite(heartLedsTransistorPin, fadeValue);
       delay(heartDelayTime);
     }
-      
   }
 
   // pause 100ms, it's not necessary
